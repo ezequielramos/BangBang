@@ -14,7 +14,7 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     screen_w, screen_h = screen.get_size()
 
-    map_curve = game_map.generate(WIDTH, HEIGHT)
+    map_curve = game_map.generate(WIDTH, HEIGHT, 2500)
 
     #icon = pygame.image.load("pygame-icon.png")
     #icon = icon.convert_alpha()
@@ -36,12 +36,17 @@ def main():
 
         #socket.send('oi')
         #newText = socket.recv(1024)
-        #text = font.render('aaaaaa', True, (255, 255, 255, 255))
-        #text_w, text_h = text.get_size()
+        
+
+        text = font.render('10uv >>', True, (255, 255, 255))
+        fps_text = font.render(f'{round(clock.get_fps(),2)} fps', True, (255, 255, 255))
+        
+        text_w, _ = fps_text.get_size()
 
         screen.fill( (0,0,0) )
 
-        #screen.blit(text, (screen_w / 2 - text_w / 2, screen_h / 2 - text_h / 2))
+        screen.blit(text, (0, 0))
+        screen.blit(fps_text, (WIDTH - text_w, 0))
 
         for i in range(WIDTH):
             pygame.draw.line(screen, (255,255,255), [i, map_curve[i]], [i,HEIGHT], 1)
