@@ -8,7 +8,6 @@ def main():
 
     fps = 30
 
-    pygame.init()
 
     clock = pygame.time.Clock()
 
@@ -21,6 +20,7 @@ def main():
     #icon = icon.convert_alpha()
     #icon_w, icon_h = icon.get_size()
 
+    pygame.font.init()
     font = pygame.font.Font("DejaVuSans.ttf", 24)
     #text = font.render('aaaa', True, (255, 255, 255, 255))
     #text_w, text_h = text.get_size()
