@@ -16,13 +16,13 @@ import game_map
 import pygame.locals as GAME_GLOBALS
 import pygame.event as GAME_EVENTS
 import socket
-
+import json
 
 
 WIDTH = 1280
 HEIGHT = 720
 
-PORT = 5000
+PORT = 5006
 
 def textOnMiddle(screen, text, font):
     text = font.render(text, True, (255, 255, 255))
@@ -65,18 +65,31 @@ def main():
         except KeyboardInterrupt:
             print('Closing Server...')
             return s
+    
+        screen.fill( (0,0,0) )
+        textOnMiddle(screen, 'Generating map...', font)
+        pygame.display.flip()
+        map_curve = game_map.generate(WIDTH, HEIGHT, 2500)
+        msg = bytes(json.dumps(map_curve), 'utf-8')
+        conn.send(bytes(str(len(msg)), 'utf-8'))
+        conn.recv(2)
+        conn.send(msg)
+        #return s
+
     elif TYPE == 'JOIN':
         textOnMiddle(screen, 'Joining...', font)
         pygame.display.flip()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(('127.0.0.1', PORT))
-
+        msg_len = s.recv(64)
+        s.send(b'ok')
+        msg = s.recv(int(msg_len))
+        msg = msg.decode("utf-8")
+        print(msg)
+        map_curve = json.loads(msg)
+        # return s
     #screen.blit(fps_text, (WIDTH - text_w, 0))
 
-    textOnMiddle(screen, 'Generating map...', font)
-
-
-    pygame.display.flip()
 
     #icon = pygame.image.load("pygame-icon.png")
     #icon = icon.convert_alpha()
@@ -92,13 +105,13 @@ def main():
     #x, y = load_state()
     #delete_state()
 
-    map_curve = game_map.generate(WIDTH, HEIGHT, 2500)
 
     while True:
 
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
+                conn.close()
                 pygame.quit()
 
                 print('Closing Server...')
