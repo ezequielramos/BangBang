@@ -17,12 +17,25 @@ import pygame.locals as GAME_GLOBALS
 import pygame.event as GAME_EVENTS
 import socket
 import json
-
+import time
+import random
 
 WIDTH = 1280
 HEIGHT = 720
 
 PORT = 5006
+
+stars = []
+
+for _ in range(10):
+    stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT/5), 2, 2])
+
+for _ in range(5):
+    stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT/5), 4, 4])
+
+for _ in range(2):
+    stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT/5), 8, 8])
+
 
 def textOnMiddle(screen, text, font):
     text = font.render(text, True, (255, 255, 255))
@@ -30,6 +43,25 @@ def textOnMiddle(screen, text, font):
 
     screen.blit(text, (WIDTH/2 - text_w/2, HEIGHT/2 - text_h/2))
 
+def encodeDict(dict_var):
+    return bytes(json.dumps(dict_var), 'utf-8')
+
+def decodeDict(msg):
+    return json.loads(msg.decode("utf-8"))
+
+def printBackground(screen):
+    #sky
+    pygame.draw.rect(screen, (10,10,30),  [0,0,WIDTH, HEIGHT])
+    pygame.draw.rect(screen, (10,30,50),  [0,HEIGHT/20, WIDTH, HEIGHT])
+    pygame.draw.rect(screen, (10,50,70),  [0,HEIGHT/10, WIDTH, HEIGHT ])
+    pygame.draw.rect(screen, (10,70,110), [0,HEIGHT/5, WIDTH, HEIGHT])
+    pygame.draw.rect(screen, (10,100,150), [0,HEIGHT/2 - 100, WIDTH, HEIGHT])
+    #moon
+    pygame.draw.circle(screen, (255,255,255), [int(WIDTH/10), int(HEIGHT/2)], 50)
+    #stars
+    for star in stars:
+        pygame.draw.rect(screen, (255,255,255), star)
+    
 def main():
 
     fps = 30
@@ -61,7 +93,7 @@ def main():
             textOnMiddle(screen, 'Waiting for player to join...', font)
             pygame.display.flip()
 
-            conn, addr = s.accept()
+            conn, _ = s.accept()
         except KeyboardInterrupt:
             print('Closing Server...')
             return s
@@ -70,11 +102,10 @@ def main():
         textOnMiddle(screen, 'Generating map...', font)
         pygame.display.flip()
         map_curve = game_map.generate(WIDTH, HEIGHT, 2500)
-        msg = bytes(json.dumps(map_curve), 'utf-8')
+        msg = encodeDict(map_curve)
         conn.send(bytes(str(len(msg)), 'utf-8'))
         conn.recv(2)
         conn.send(msg)
-        #return s
 
     elif TYPE == 'JOIN':
         textOnMiddle(screen, 'Joining...', font)
@@ -84,26 +115,17 @@ def main():
         msg_len = s.recv(64)
         s.send(b'ok')
         msg = s.recv(int(msg_len))
-        msg = msg.decode("utf-8")
-        print(msg)
-        map_curve = json.loads(msg)
-        # return s
-    #screen.blit(fps_text, (WIDTH - text_w, 0))
+        map_curve = decodeDict(msg)
+    else:
+        textOnMiddle(screen, 'Generating map...', font)
+        pygame.display.flip()
+        map_curve = game_map.generate(WIDTH, HEIGHT, 2500)
 
 
     #icon = pygame.image.load("pygame-icon.png")
     #icon = icon.convert_alpha()
     #icon_w, icon_h = icon.get_size()
 
-    #text = font.render('aaaa', True, (255, 255, 255, 255))
-    #text_w, text_h = text.get_size()
-
-    #sleeping = False
-
-    # On startup, load state saved by APP_WILLENTERBACKGROUND, and the delete
-    # that state.
-    #x, y = load_state()
-    #delete_state()
 
 
     while True:
@@ -117,6 +139,19 @@ def main():
                 print('Closing Server...')
                 return s
 
+        ping = time.time()
+        if TYPE == 'HOST':
+            conn.send(b'hi')
+            conn.recv(2)
+        elif TYPE == 'JOIN':
+            s.recv(2)
+            s.send(b'hi')
+
+        ping = time.time() - ping
+
+        screen.fill( (0,0,0) )
+
+        printBackground(screen)
 
         #socket.send('oi')
         #newText = socket.recv(1024)
@@ -124,16 +159,17 @@ def main():
 
         text = font.render('10uv >>', True, (255, 255, 255))
         fps_text = font.render(f'{round(clock.get_fps(),2)} fps', True, (255, 255, 255))
-        
-        text_w, _ = fps_text.get_size()
+        ping_text = font.render(f'ping {int(ping * 1000)}ms', True, (255, 255, 255))
+        text_w, text_h = fps_text.get_size()
+        ping_text_w, _ = ping_text.get_size()
 
-        screen.fill( (0,0,0) )
 
         screen.blit(text, (0, 0))
         screen.blit(fps_text, (WIDTH - text_w, 0))
+        screen.blit(ping_text, (WIDTH - ping_text_w, text_h))
 
         for i in range(WIDTH):
-            pygame.draw.line(screen, (255,255,255), [i, map_curve[i]], [i,HEIGHT], 1)
+            pygame.draw.line(screen, (0,0,0), [i, map_curve[i]], [i,HEIGHT], 1)
         
         pygame.display.flip()
 
