@@ -23,6 +23,7 @@ import random
 WIDTH = 1280
 HEIGHT = 720
 
+HOST = '127.0.0.1'
 PORT = 5006
 
 stars = []
@@ -78,7 +79,7 @@ def main():
         print('Socket created')
         
         try:
-            s.bind(('127.0.0.1', PORT))
+            s.bind((HOST, PORT))
         except socket.error as msg:
             print(msg)
             print('Bind failed. Error Code. ')
@@ -111,10 +112,11 @@ def main():
         textOnMiddle(screen, 'Joining...', font)
         pygame.display.flip()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('127.0.0.1', PORT))
+        s.connect((HOST, PORT))
         msg_len = s.recv(64)
         s.send(b'ok')
-        msg = s.recv(int(msg_len))
+        msg = s.recv(int(msg_len)*2)
+        print(msg)
         map_curve = decodeDict(msg)
     else:
         textOnMiddle(screen, 'Generating map...', font)
@@ -126,11 +128,19 @@ def main():
     #icon = icon.convert_alpha()
     #icon_w, icon_h = icon.get_size()
 
-
+    shoting_force = -1
 
     while True:
 
         for event in pygame.event.get():
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    shoting_force = 0
+            
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE:
+                    shoting_force = -1
 
             if event.type == pygame.QUIT:
                 conn.close()
@@ -171,6 +181,13 @@ def main():
         for i in range(WIDTH):
             pygame.draw.line(screen, (0,0,0), [i, map_curve[i]], [i,HEIGHT], 1)
         
+
+        if shoting_force != -1:
+            if shoting_force < 50:
+                shoting_force += 1
+            
+            pygame.draw.rect(screen, (255, 0, 0), [0, HEIGHT-(HEIGHT/20), WIDTH/50 * shoting_force, HEIGHT/20])
+
         pygame.display.flip()
 
 
