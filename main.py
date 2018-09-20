@@ -24,9 +24,34 @@ WIDTH = 1280
 HEIGHT = 720
 
 HOST = '127.0.0.1'
-PORT = 5006
+PORT = 5000
 
 stars = []
+
+class Bullet(object):
+
+    def __init__(self, screen, x, y, force, angle=45, direction='right'):
+        self.x = x
+        self.y = y
+        self.verticalForce = force/2
+        self.horizontalForce = force/2
+        self.screen = screen
+        self.radius = 4
+        self.direction = 1 if direction == 'right' else -1
+
+    def update(self):
+
+        self.verticalForce -= 1
+        self.x += self.horizontalForce * self.direction
+        self.y -= self.verticalForce
+
+        if self.x > WIDTH + self.radius or self.x < 0 - self.radius:
+            return False
+
+        return True
+
+    def draw(self):
+        pygame.draw.circle(self.screen, (0,100,0), [int(self.x), int(self.y)], 4)
 
 for _ in range(10):
     stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT/5), 2, 2])
@@ -128,19 +153,36 @@ def main():
     #icon = icon.convert_alpha()
     #icon_w, icon_h = icon.get_size()
 
-    shoting_force = -1
+    shooting_force = -1
+
+    bullets = []
 
     while True:
+
+        msg = {}
+        recv_msg = {}
 
         for event in pygame.event.get():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    shoting_force = 0
+                    shooting_force = 0
             
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_SPACE:
-                    shoting_force = -1
+                    if TYPE == 'JOIN':
+                        x = WIDTH - 100
+                        direction = 'left'
+                    else:
+                        x = 100
+                        direction = 'right'
+                    bullets.append(Bullet(screen, x, HEIGHT/4, shooting_force, 45, direction))
+                    msg['shoot'] = {
+                        'x': x,
+                        'y': HEIGHT/4,
+                        'shooting_force': shooting_force
+                    }
+                    shooting_force = -1
 
             if event.type == pygame.QUIT:
                 conn.close()
@@ -151,11 +193,20 @@ def main():
 
         ping = time.time()
         if TYPE == 'HOST':
-            conn.send(b'hi')
-            conn.recv(2)
+            conn.send(encodeDict(msg))
+            recv_msg = conn.recv(1024)
+            recv_msg = decodeDict(recv_msg)
         elif TYPE == 'JOIN':
-            s.recv(2)
-            s.send(b'hi')
+            recv_msg = s.recv(1024)
+            s.send(encodeDict(msg))
+            recv_msg = decodeDict(recv_msg)
+
+        if 'shoot' in recv_msg:
+            if TYPE == 'JOIN':
+                direction = 'right'
+            else:
+                direction = 'left'
+            bullets.append(Bullet(screen, recv_msg['shoot']['x'], recv_msg['shoot']['y'] , recv_msg['shoot']['shooting_force'], 45, direction))
 
         ping = time.time() - ping
 
@@ -182,11 +233,18 @@ def main():
             pygame.draw.line(screen, (0,0,0), [i, map_curve[i]], [i,HEIGHT], 1)
         
 
-        if shoting_force != -1:
-            if shoting_force < 50:
-                shoting_force += 1
+        if shooting_force != -1:
+            if shooting_force < 50:
+                shooting_force += 1
             
-            pygame.draw.rect(screen, (255, 0, 0), [0, HEIGHT-(HEIGHT/20), WIDTH/50 * shoting_force, HEIGHT/20])
+            pygame.draw.rect(screen, (255, 0, 0), [0, HEIGHT-(HEIGHT/20), WIDTH/50 * shooting_force, HEIGHT/20])
+
+        for bullet in bullets[:]:
+            if not bullet.update():
+                bullets.remove(bullet)
+                del bullet
+            else:
+                bullet.draw()
 
         pygame.display.flip()
 
