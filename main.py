@@ -24,19 +24,21 @@ WIDTH = 1280
 HEIGHT = 720
 
 HOST = '127.0.0.1'
-PORT = 5000
+PORT = 5001
 
 stars = []
 
 class Bullet(object):
 
-    def __init__(self, screen, x, y, force, angle=45, direction='right'):
+    def __init__(self, screen, map_curve, x, y, force, angle=45, direction='right'):
         self.x = x
         self.y = y
+        self.collide = False
         self.verticalForce = force/2
         self.horizontalForce = force/2
         self.screen = screen
         self.radius = 4
+        self.map_curve = map_curve
         self.direction = 1 if direction == 'right' else -1
 
     def update(self):
@@ -46,6 +48,10 @@ class Bullet(object):
         self.y -= self.verticalForce
 
         if self.x > WIDTH + self.radius or self.x < 0 - self.radius:
+            return False
+
+        if self.y >= self.map_curve[int(self.x)]:
+            self.collide = True
             return False
 
         return True
@@ -176,7 +182,7 @@ def main():
                     else:
                         x = 100
                         direction = 'right'
-                    bullets.append(Bullet(screen, x, HEIGHT/4, shooting_force, 45, direction))
+                    bullets.append(Bullet(screen, map_curve, x, HEIGHT/4, shooting_force, 45, direction))
                     msg['shoot'] = {
                         'x': x,
                         'y': HEIGHT/4,
@@ -206,7 +212,7 @@ def main():
                 direction = 'right'
             else:
                 direction = 'left'
-            bullets.append(Bullet(screen, recv_msg['shoot']['x'], recv_msg['shoot']['y'] , recv_msg['shoot']['shooting_force'], 45, direction))
+            bullets.append(Bullet(screen, map_curve, recv_msg['shoot']['x'], recv_msg['shoot']['y'] , recv_msg['shoot']['shooting_force'], 45, direction))
 
         ping = time.time() - ping
 
@@ -241,6 +247,10 @@ def main():
 
         for bullet in bullets[:]:
             if not bullet.update():
+                if bullet.collide:
+                    x = int(bullet.x)
+                    for i in range(x-10, x+10):
+                        map_curve[i] += 10
                 bullets.remove(bullet)
                 del bullet
             else:
