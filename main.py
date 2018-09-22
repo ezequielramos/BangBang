@@ -23,8 +23,12 @@ import random
 WIDTH = 1280
 HEIGHT = 720
 
-HOST = '127.0.0.1'
+HOST = socket.gethostbyname(socket.gethostname())
 PORT = 5001
+
+if TYPE == 'JOIN':
+    if len(sys.argv) >= 3:
+        HOST = sys.argv[2]
 
 stars = []
 
@@ -117,6 +121,7 @@ def main():
             sys.exit()
             
         print('Socket bind complete')
+        print(f'Hosting on: {HOST}:{PORT}')
         
         s.listen(10)
         print('Socket now listening')
