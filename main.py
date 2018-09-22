@@ -138,6 +138,7 @@ def main():
         conn.send(bytes(str(len(msg)), 'utf-8'))
         conn.recv(2)
         conn.send(msg)
+        conn.recv(2)
 
     elif TYPE == 'JOIN':
         textOnMiddle(screen, 'Joining...', font)
@@ -146,9 +147,13 @@ def main():
         s.connect((HOST, PORT))
         msg_len = s.recv(64)
         s.send(b'ok')
-        msg = s.recv(int(msg_len)*2)
-        print(msg)
+        msg = b''
+        while len(msg) < int(msg_len):
+            msg += s.recv(int(msg_len))
+            print(len(msg), msg_len)
+
         map_curve = decodeDict(msg)
+        s.send(b'ok')
     else:
         textOnMiddle(screen, 'Generating map...', font)
         pygame.display.flip()
