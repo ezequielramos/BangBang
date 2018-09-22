@@ -32,12 +32,15 @@ if TYPE == 'JOIN':
 stars = []
 
 class Cannon(pygame.sprite.Group):
-    def __init__(self, screen: pygame.Surface, x, y, color):
+    def __init__(self, screen: pygame.Surface, map_curve, x, color):
         super(pygame.sprite.Group, self).__init__()
 
         self.rotating = 0
+        self.map_curve = map_curve
+        y = map_curve[int(x)] - 13
 
         self.base = pygame.sprite.Sprite()
+        
         self.base.image = pygame.Surface([30, 10])
         self.base.image.set_colorkey([0,0,0])  
         self.base.image.fill(color)  
@@ -63,11 +66,16 @@ class Cannon(pygame.sprite.Group):
         self.rot = (self.rot + (self.rot_speed * self.rotating) ) % 360
         self.image = pygame.transform.rotate(self.base.image, self.rot)  
         rect = self.image.get_rect()
-        rect.center = old_center  
-        self.base.rect = rect 
+        rect.center = old_center
+        self.base.rect = rect
 
     def draw(self, screen):
+        center = self.base.rect.center
         screen.blit(self.image , self.base.rect)
+
+        brown = (100,50,30)
+        pygame.draw.rect(screen, brown, [center[0]-5,center[1],10,15])
+        pygame.draw.circle(screen, brown, center, 5)
 
 class Bullet(object):
 
@@ -216,8 +224,8 @@ def main():
 
     bullets = []
 
-    cannon1 = Cannon(screen, 100, HEIGHT/4, (0,255,0))
-    cannon2 = Cannon(screen, WIDTH-100, HEIGHT/4, (255,0,0))
+    cannon1 = Cannon(screen, map_curve, 100, (0,255,0))
+    cannon2 = Cannon(screen, map_curve, WIDTH-100, (255,0,0))
 
     while True:
 
@@ -253,10 +261,13 @@ def main():
                     if TYPE == 'JOIN':
                         x = WIDTH - 100
                         direction = 'left'
+                        center = cannon2.base.rect.center
                     else:
                         x = 100
                         direction = 'right'
-                    bullets.append(Bullet(screen, map_curve, x, HEIGHT/4, shooting_force, 45, direction))
+                        center = cannon1.base.rect.center
+
+                    bullets.append(Bullet(screen, map_curve, center[0], center[1], shooting_force, 45, direction))
                     msg['shoot'] = {
                         'x': x,
                         'y': HEIGHT/4,
