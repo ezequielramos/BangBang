@@ -186,7 +186,13 @@ def main():
         textOnMiddle(screen, 'Joining...', font)
         pygame.display.flip()
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((HOST, PORT))
+        
+        try:
+            s.connect((HOST, PORT))
+        except ConnectionRefusedError:
+            print('Can\'t connect to host.')
+            return 
+        
         msg_len = s.recv(64)
         s.send(b'ok')
         msg = b''
@@ -289,12 +295,20 @@ def main():
                 print('Connection closed by client')
                 conn.close()
                 return s
+            except json.decoder.JSONDecodeError:
+                print('Connection closed by client')
+                conn.close()
+                return s
+
         elif TYPE == 'JOIN':
             try:
                 recv_msg = s.recv(1024)
                 s.send(encodeDict(msg))
                 recv_msg = decodeDict(recv_msg)
             except json.decoder.JSONDecodeError:
+                print('Connection closed by host')
+                return s
+            except ConnectionResetError:
                 print('Connection closed by host')
                 return s
 
