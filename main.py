@@ -13,12 +13,11 @@ if len(sys.argv) >= 2:
 
 import pygame
 import game_map
-import pygame.locals as GAME_GLOBALS
-import pygame.event as GAME_EVENTS
 import socket
 import json
 import time
 import random
+from pygame.locals import KEYDOWN, KEYUP, K_SPACE, QUIT #pylint: disable=E0611
 
 WIDTH = 1280
 HEIGHT = 720
@@ -180,12 +179,12 @@ def main():
 
         for event in pygame.event.get():
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+            if event.type == KEYDOWN:
+                if event.key == K_SPACE:
                     shooting_force = 0
             
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_SPACE:
+            if event.type == KEYUP:
+                if event.key == K_SPACE:
                     if TYPE == 'JOIN':
                         x = WIDTH - 100
                         direction = 'left'
@@ -200,22 +199,38 @@ def main():
                     }
                     shooting_force = -1
 
-            if event.type == pygame.QUIT:
-                conn.close()
-                pygame.quit()
+            if event.type == QUIT:
+                pygame.font.quit()
+                pygame.display.quit()
 
-                print('Closing Server...')
-                return s
+                if TYPE == 'HOST':
+                    conn.close()
+
+                if TYPE == 'JOIN' or TYPE == 'HOST': 
+                    print('Closing Server...')
+                    return s
+                
+                return
 
         ping = time.time()
         if TYPE == 'HOST':
-            conn.send(encodeDict(msg))
-            recv_msg = conn.recv(1024)
-            recv_msg = decodeDict(recv_msg)
+            try:
+                conn.send(encodeDict(msg))
+                recv_msg = conn.recv(1024)
+                recv_msg = decodeDict(recv_msg)
+            except ConnectionResetError:
+                print('Connection closed by client')
+                conn.close()
+                return s
         elif TYPE == 'JOIN':
-            recv_msg = s.recv(1024)
-            s.send(encodeDict(msg))
-            recv_msg = decodeDict(recv_msg)
+            try:
+                recv_msg = s.recv(1024)
+                s.send(encodeDict(msg))
+                recv_msg = decodeDict(recv_msg)
+            except json.decoder.JSONDecodeError:
+                print('Connection closed by host')
+                return s
+
 
         if 'shoot' in recv_msg:
             if TYPE == 'JOIN':
@@ -229,10 +244,6 @@ def main():
         screen.fill( (0,0,0) )
 
         printBackground(screen)
-
-        #socket.send('oi')
-        #newText = socket.recv(1024)
-        
 
         text = font.render('10uv >>', True, (255, 255, 255))
         fps_text = font.render(f'{round(clock.get_fps(),2)} fps', True, (255, 255, 255))
@@ -272,4 +283,6 @@ def main():
         clock.tick(fps)
 
 socket = main()
-socket.close()
+
+if socket:
+    socket.close()
