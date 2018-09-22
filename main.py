@@ -17,7 +17,7 @@ import socket
 import json
 import time
 import random
-from pygame.locals import KEYDOWN, KEYUP, K_SPACE, QUIT #pylint: disable=E0611
+from pygame.locals import KEYDOWN, KEYUP, K_SPACE, QUIT, K_UP, K_DOWN #pylint: disable=E0611
 
 WIDTH = 1280
 HEIGHT = 720
@@ -31,9 +31,47 @@ if TYPE == 'JOIN':
 
 stars = []
 
+class Cannon(pygame.sprite.Group):
+    def __init__(self, screen: pygame.Surface, x, y, color):
+        super(pygame.sprite.Group, self).__init__()
+
+        self.rotating = 0
+
+        self.base = pygame.sprite.Sprite()
+        self.base.image = pygame.Surface([30, 10])
+        self.base.image.set_colorkey([0,0,0])  
+        self.base.image.fill(color)  
+        
+        self.image = self.base.image.copy()
+        self.image.set_colorkey([0,0,0])
+        
+        self.base.rect = self.base.image.get_rect()
+
+        self.base.rect.center = (x , y)  
+
+        self.rot = 0
+        self.rot_speed = 2
+
+        self.add(self.base)
+
+    def update(self):
+        if self.rotating != 0:
+            self.rotate()
+
+    def rotate(self):
+        old_center = self.base.rect.center
+        self.rot = (self.rot + (self.rot_speed * self.rotating) ) % 360
+        self.image = pygame.transform.rotate(self.base.image, self.rot)  
+        rect = self.image.get_rect()
+        rect.center = old_center  
+        self.base.rect = rect 
+
+    def draw(self, screen):
+        screen.blit(self.image , self.base.rect)
+
 class Bullet(object):
 
-    def __init__(self, screen, map_curve, x, y, force, angle=45, direction='right'):
+    def __init__(self, screen: pygame.Surface, map_curve, x, y, force, angle=45, direction='right'):
         self.x = x
         self.y = y
         self.collide = False
@@ -172,9 +210,14 @@ def main():
 
     bullets = []
 
+    cannon1 = Cannon(screen, 100, HEIGHT/4, (0,255,0))
+    cannon2 = Cannon(screen, WIDTH-100, HEIGHT/4, (255,0,0))
+
     while True:
 
-        msg = {}
+        msg = {
+            "cannon": {}
+        }
         recv_msg = {}
 
         for event in pygame.event.get():
@@ -182,6 +225,22 @@ def main():
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
                     shooting_force = 0
+
+                if event.key == K_UP:
+                    if TYPE == 'JOIN':
+                        cannon2.rotating = -1
+                        msg['cannon']['rotation'] = -1
+                    else:
+                        cannon1.rotating = 1
+                        msg['cannon']['rotation'] = 1
+
+                if event.key == K_DOWN:
+                    if TYPE == 'JOIN':
+                        cannon2.rotating = 1
+                        msg['cannon']['rotation'] = 1
+                    else:
+                        cannon1.rotating = -1
+                        msg['cannon']['rotation'] = -1
             
             if event.type == KEYUP:
                 if event.key == K_SPACE:
@@ -198,6 +257,14 @@ def main():
                         'shooting_force': shooting_force
                     }
                     shooting_force = -1
+                
+                if event.key == K_UP or event.key == K_DOWN:
+                    if TYPE == 'JOIN':
+                        cannon2.rotating = 0
+                    else:
+                        cannon1.rotating = 0
+
+                    msg['cannon']['rotation'] = 0
 
             if event.type == QUIT:
                 pygame.font.quit()
@@ -239,6 +306,14 @@ def main():
                 direction = 'left'
             bullets.append(Bullet(screen, map_curve, recv_msg['shoot']['x'], recv_msg['shoot']['y'] , recv_msg['shoot']['shooting_force'], 45, direction))
 
+        if 'cannon' in recv_msg:
+            if 'rotation' in recv_msg['cannon']:
+                rotation = recv_msg['cannon']['rotation']
+                if TYPE == 'JOIN':
+                    cannon1.rotating = rotation
+                if TYPE == 'HOST':
+                    cannon2.rotating = rotation
+
         ping = time.time() - ping
 
         screen.fill( (0,0,0) )
@@ -276,6 +351,11 @@ def main():
                 del bullet
             else:
                 bullet.draw()
+
+        cannon1.update()
+        cannon1.draw(screen)
+        cannon2.update()
+        cannon2.draw(screen)
 
         pygame.display.flip()
 
