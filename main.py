@@ -371,7 +371,8 @@ def main():
                 if bullet.collide:
                     x = int(bullet.x)
                     for i in range(x-10, x+10):
-                        map_curve[i] += 10
+                        if i >= 0 or i < WIDTH:
+                            map_curve[i] += 10
                 bullets.remove(bullet)
                 del bullet
             else:
