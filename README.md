@@ -14,10 +14,19 @@ $ sudo apt-get install python3-pip
 $ sudo pip3 install virtualenv
 ```
 
-Então execute:
+Então execute o seguinte para criar a virtualenv:
 ```
 $ python3 -m virtualenv pyenv3
+```
+
+Para ativar o ambiente virtual execute:
+```
 $ source pyenv3/bin/activate
+```
+
+Com o ambiente virtual ativo, execute o seguinte comando para instalar todas as depêndencias:
+```
+(pyenv3) $ python -m pip install -r requirements.txt
 ```
 
 
