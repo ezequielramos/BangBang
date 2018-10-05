@@ -35,10 +35,14 @@ Certifique-se que o ambiente virtual esta ativo executando:
 ```
 $ source pyenv3/bin/activate
 ```
-### Host
-dsadsa
+### How to Host
+```
+(pyenv3) $ python main.py host
+```
 
-### Client
-dsadsa
+### How to Join
+```
+(pyenv3) $ python main.py join [HOST_ADDRESS]
+```
 
 ## Preview
