@@ -166,7 +166,7 @@ def main():
             sys.exit()
             
         print('Socket bind complete')
-        print(f'Hosting on: {HOST}:{PORT}')
+        print('Hosting on: '+HOST+':'+str(PORT))
         
         s.listen(10)
         print('Socket now listening')
@@ -346,8 +346,8 @@ def main():
         printBackground(screen)
 
         text = font.render('10uv >>', True, (255, 255, 255))
-        fps_text = font.render(f'{round(clock.get_fps(),2)} fps', True, (255, 255, 255))
-        ping_text = font.render(f'ping {int(ping * 1000)}ms', True, (255, 255, 255))
+        fps_text = font.render( str(round(clock.get_fps(),2)) + ' fps', True, (255, 255, 255))
+        ping_text = font.render('ping ' + str(int(ping * 1000)) + 'ms', True, (255, 255, 255))
         text_w, text_h = fps_text.get_size()
         ping_text_w, _ = ping_text.get_size()
 
