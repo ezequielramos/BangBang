@@ -31,6 +31,14 @@ Com o ambiente virtual ativo, execute o seguinte comando para instalar todas as 
 
 
 ## How to run it
+Certifique-se que o ambiente virtual esta ativo executando:
+```
+$ source pyenv3/bin/activate
+```
+### Host
+dsadsa
 
+### Client
+dsadsa
 
 ## Preview
