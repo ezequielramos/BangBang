@@ -14,6 +14,12 @@ $ sudo apt-get install python3-pip
 $ sudo pip3 install virtualenv
 ```
 
+Então execute:
+```
+$ python3 -m virtualenv pyenv3
+$ source pyenv3/bin/activate
+```
+
 
 ## How to run it
 
