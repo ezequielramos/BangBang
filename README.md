@@ -46,3 +46,4 @@ $ source pyenv3/bin/activate
 ```
 
 ## Preview
+<table><tr><td><img src="screenshot_samples/1.png"></td><td><img src="screenshot_samples/2.png"></td></tr><tr><td colspan="2"><img src="screenshot_samples/3.png"></td></tr></table>
