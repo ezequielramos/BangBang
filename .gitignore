@@ -1,2 +1,3 @@
 .vscode
 pyenv3
+*.pyc
