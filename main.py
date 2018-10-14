@@ -269,8 +269,8 @@ def main():
 
                     bullets.append(Bullet(screen, map_curve, center[0], center[1], shooting_force, 45, direction))
                     msg['shoot'] = {
-                        'x': x,
-                        'y': HEIGHT/4,
+                        'x': center[0],
+                        'y': center[1],
                         'shooting_force': shooting_force
                     }
                     shooting_force = -1
@@ -371,7 +371,7 @@ def main():
                 if bullet.collide:
                     x = int(bullet.x)
                     for i in range(x-10, x+10):
-                        if i >= 0 or i < WIDTH:
+                        if i >= 0 or i < WIDTH-1:
                             map_curve[i] += 10
                 bullets.remove(bullet)
                 del bullet
