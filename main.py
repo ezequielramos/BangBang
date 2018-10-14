@@ -19,8 +19,8 @@ import time
 import random
 from pygame.locals import KEYDOWN, KEYUP, K_SPACE, QUIT, K_UP, K_DOWN #pylint: disable=E0611
 
-WIDTH = 1280
-HEIGHT = 720
+import config
+from bullet import Bullet
 
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 5001
@@ -77,52 +77,21 @@ class Cannon(pygame.sprite.Group):
         pygame.draw.rect(screen, brown, [center[0]-5,center[1],10,15])
         pygame.draw.circle(screen, brown, center, 5)
 
-class Bullet(object):
-
-    def __init__(self, screen: pygame.Surface, map_curve, x, y, force, angle=45, direction='right'):
-        self.x = x
-        self.y = y
-        self.collide = False
-        self.verticalForce = force/2
-        self.horizontalForce = force/2
-        self.screen = screen
-        self.radius = 4
-        self.map_curve = map_curve
-        self.direction = 1 if direction == 'right' else -1
-
-    def update(self):
-
-        self.verticalForce -= 1
-        self.x += self.horizontalForce * self.direction
-        self.y -= self.verticalForce
-
-        if self.x > WIDTH + self.radius or self.x < 0 - self.radius:
-            return False
-
-        if self.y >= self.map_curve[int(self.x)]:
-            self.collide = True
-            return False
-
-        return True
-
-    def draw(self):
-        pygame.draw.circle(self.screen, (0,100,0), [int(self.x), int(self.y)], 4)
-
 for _ in range(10):
-    stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT/5), 2, 2])
+    stars.append([random.randint(0, config.WIDTH), random.randint(0, config.HEIGHT/5), 2, 2])
 
 for _ in range(5):
-    stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT/5), 4, 4])
+    stars.append([random.randint(0, config.WIDTH), random.randint(0, config.HEIGHT/5), 4, 4])
 
 for _ in range(2):
-    stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT/5), 8, 8])
+    stars.append([random.randint(0, config.WIDTH), random.randint(0, config.HEIGHT/5), 8, 8])
 
 
 def textOnMiddle(screen, text, font):
     text = font.render(text, True, (255, 255, 255))
     text_w, text_h = text.get_size()
 
-    screen.blit(text, (WIDTH/2 - text_w/2, HEIGHT/2 - text_h/2))
+    screen.blit(text, (config.WIDTH/2 - text_w/2, config.HEIGHT/2 - text_h/2))
 
 def encodeDict(dict_var):
     return bytes(json.dumps(dict_var), 'utf-8')
@@ -132,13 +101,13 @@ def decodeDict(msg):
 
 def printBackground(screen):
     #sky
-    pygame.draw.rect(screen, (10,10,30),  [0,0,WIDTH, HEIGHT])
-    pygame.draw.rect(screen, (10,30,50),  [0,HEIGHT/20, WIDTH, HEIGHT])
-    pygame.draw.rect(screen, (10,50,70),  [0,HEIGHT/10, WIDTH, HEIGHT ])
-    pygame.draw.rect(screen, (10,70,110), [0,HEIGHT/5, WIDTH, HEIGHT])
-    pygame.draw.rect(screen, (10,100,150), [0,HEIGHT/2 - 100, WIDTH, HEIGHT])
+    pygame.draw.rect(screen, (10,10,30),  [0,0,config.WIDTH, config.HEIGHT])
+    pygame.draw.rect(screen, (10,30,50),  [0,config.HEIGHT/20, config.WIDTH, config.HEIGHT])
+    pygame.draw.rect(screen, (10,50,70),  [0,config.HEIGHT/10, config.WIDTH, config.HEIGHT ])
+    pygame.draw.rect(screen, (10,70,110), [0,config.HEIGHT/5, config.WIDTH, config.HEIGHT])
+    pygame.draw.rect(screen, (10,100,150), [0,config.HEIGHT/2 - 100, config.WIDTH, config.HEIGHT])
     #moon
-    pygame.draw.circle(screen, (255,255,255), [int(WIDTH/10), int(HEIGHT/2)], 50)
+    pygame.draw.circle(screen, (255,255,255), [int(config.WIDTH/10), int(config.HEIGHT/2)], 50)
     #stars
     for star in stars:
         pygame.draw.rect(screen, (255,255,255), star)
@@ -148,7 +117,7 @@ def main():
     fps = 30
     clock = pygame.time.Clock()
 
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    screen = pygame.display.set_mode((config.WIDTH, config.HEIGHT))
 
     pygame.font.init()
     font = pygame.font.Font("DejaVuSans.ttf", 24)
@@ -183,7 +152,7 @@ def main():
         screen.fill( (0,0,0) )
         textOnMiddle(screen, 'Generating map...', font)
         pygame.display.flip()
-        map_curve = game_map.generate(WIDTH, HEIGHT, 2500)
+        map_curve = game_map.generate(config.WIDTH, config.HEIGHT, 2500)
         msg = encodeDict(map_curve)
         conn.send(bytes(str(len(msg)), 'utf-8'))
         conn.recv(2)
@@ -213,7 +182,7 @@ def main():
     else:
         textOnMiddle(screen, 'Generating map...', font)
         pygame.display.flip()
-        map_curve = game_map.generate(WIDTH, HEIGHT, 2500)
+        map_curve = game_map.generate(config.WIDTH, config.HEIGHT, 2500)
 
 
     #icon = pygame.image.load("pygame-icon.png")
@@ -225,7 +194,7 @@ def main():
     bullets = []
 
     cannon1 = Cannon(screen, map_curve, 100, (0,255,0))
-    cannon2 = Cannon(screen, map_curve, WIDTH-100, (255,0,0))
+    cannon2 = Cannon(screen, map_curve, config.WIDTH-100, (255,0,0))
 
     while True:
 
@@ -259,7 +228,7 @@ def main():
             if event.type == KEYUP:
                 if event.key == K_SPACE:
                     if TYPE == 'JOIN':
-                        x = WIDTH - 100
+                        x = config.WIDTH - 100
                         direction = 'left'
                         center = cannon2.base.rect.center
                     else:
@@ -353,25 +322,25 @@ def main():
 
 
         screen.blit(text, (0, 0))
-        screen.blit(fps_text, (WIDTH - text_w, 0))
-        screen.blit(ping_text, (WIDTH - ping_text_w, text_h))
+        screen.blit(fps_text, (config.WIDTH - text_w, 0))
+        screen.blit(ping_text, (config.WIDTH - ping_text_w, text_h))
 
-        for i in range(WIDTH):
-            pygame.draw.line(screen, (0,0,0), [i, map_curve[i]], [i,HEIGHT], 1)
+        for i in range(config.WIDTH):
+            pygame.draw.line(screen, (0,0,0), [i, map_curve[i]], [i,config.HEIGHT], 1)
         
 
         if shooting_force != -1:
             if shooting_force < 50:
                 shooting_force += 1
             
-            pygame.draw.rect(screen, (255, 0, 0), [0, HEIGHT-(HEIGHT/20), WIDTH/50 * shooting_force, HEIGHT/20])
+            pygame.draw.rect(screen, (255, 0, 0), [0, config.HEIGHT-(config.HEIGHT/20), config.WIDTH/50 * shooting_force, config.HEIGHT/20])
 
         for bullet in bullets[:]:
             if not bullet.update():
                 if bullet.collide:
                     x = int(bullet.x)
                     for i in range(x-10, x+10):
-                        if i >= 0 or i < WIDTH-1:
+                        if i >= 0 or i < config.WIDTH-1:
                             map_curve[i] += 10
                 bullets.remove(bullet)
                 del bullet
