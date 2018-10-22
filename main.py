@@ -12,7 +12,7 @@ if len(sys.argv) >= 2:
         sys.exit()
 
 import pygame
-import game_map
+# import game_map
 import socket
 import json
 import time
@@ -22,6 +22,7 @@ from pygame.locals import KEYDOWN, KEYUP, K_SPACE, QUIT, K_UP, K_DOWN #pylint: d
 import config
 from bullet import Bullet
 from cannon import Cannon
+from game_map import GameMap
 
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 5001
@@ -29,18 +30,6 @@ PORT = 5001
 if TYPE == 'JOIN':
     if len(sys.argv) >= 3:
         HOST = sys.argv[2]
-
-stars = []
-
-for _ in range(10):
-    stars.append([random.randint(0, config.WIDTH), random.randint(0, config.HEIGHT/5), 2, 2])
-
-for _ in range(5):
-    stars.append([random.randint(0, config.WIDTH), random.randint(0, config.HEIGHT/5), 4, 4])
-
-for _ in range(2):
-    stars.append([random.randint(0, config.WIDTH), random.randint(0, config.HEIGHT/5), 8, 8])
-
 
 def textOnMiddle(screen, text, font):
     text = font.render(text, True, (255, 255, 255))
@@ -54,19 +43,6 @@ def encodeDict(dict_var):
 def decodeDict(msg):
     return json.loads(msg.decode("utf-8"))
 
-def printBackground(screen):
-    #sky
-    pygame.draw.rect(screen, (10,10,30),  [0,0,config.WIDTH, config.HEIGHT])
-    pygame.draw.rect(screen, (10,30,50),  [0,config.HEIGHT/20, config.WIDTH, config.HEIGHT])
-    pygame.draw.rect(screen, (10,50,70),  [0,config.HEIGHT/10, config.WIDTH, config.HEIGHT ])
-    pygame.draw.rect(screen, (10,70,110), [0,config.HEIGHT/5, config.WIDTH, config.HEIGHT])
-    pygame.draw.rect(screen, (10,100,150), [0,config.HEIGHT/2 - 100, config.WIDTH, config.HEIGHT])
-    #moon
-    pygame.draw.circle(screen, (255,255,255), [int(config.WIDTH/10), int(config.HEIGHT/2)], 50)
-    #stars
-    for star in stars:
-        pygame.draw.rect(screen, (255,255,255), star)
-    
 def main():
 
     fps = 30
@@ -107,8 +83,8 @@ def main():
         screen.fill( (0,0,0) )
         textOnMiddle(screen, 'Generating map...', font)
         pygame.display.flip()
-        map_curve = game_map.generate(config.WIDTH, config.HEIGHT, 2500)
-        msg = encodeDict(map_curve)
+        game_map = GameMap().generate(config.WIDTH, config.HEIGHT, 2500)
+        msg = encodeDict(game_map.map_curve)
         conn.send(bytes(str(len(msg)), 'utf-8'))
         conn.recv(2)
         conn.send(msg)
@@ -132,12 +108,13 @@ def main():
             msg += s.recv(int(msg_len))
             print(len(msg), msg_len)
 
-        map_curve = decodeDict(msg)
+        game_map = GameMap()
+        game_map.map_curve = decodeDict(msg)
         s.send(b'ok')
     else:
         textOnMiddle(screen, 'Generating map...', font)
         pygame.display.flip()
-        map_curve = game_map.generate(config.WIDTH, config.HEIGHT, 2500)
+        game_map = GameMap().generate(config.WIDTH, config.HEIGHT, 2500)
 
 
     #icon = pygame.image.load("pygame-icon.png")
@@ -148,8 +125,8 @@ def main():
 
     bullets = []
 
-    cannon1 = Cannon(screen, map_curve, 100, (0,255,0))
-    cannon2 = Cannon(screen, map_curve, config.WIDTH-100, (255,0,0))
+    cannon1 = Cannon(screen, game_map, 100, (0,255,0))
+    cannon2 = Cannon(screen, game_map, config.WIDTH-100, (255,0,0))
 
     while True:
 
@@ -191,7 +168,7 @@ def main():
                         direction = 'right'
                         center = cannon1.base.rect.center
 
-                    bullets.append(Bullet(screen, map_curve, center[0], center[1], shooting_force, 45, direction))
+                    bullets.append(Bullet(screen, game_map, center[0], center[1], shooting_force, 45, direction))
                     msg['shoot'] = {
                         'x': center[0],
                         'y': center[1],
@@ -253,7 +230,7 @@ def main():
                 direction = 'right'
             else:
                 direction = 'left'
-            bullets.append(Bullet(screen, map_curve, recv_msg['shoot']['x'], recv_msg['shoot']['y'] , recv_msg['shoot']['shooting_force'], 45, direction))
+            bullets.append(Bullet(screen, game_map, recv_msg['shoot']['x'], recv_msg['shoot']['y'] , recv_msg['shoot']['shooting_force'], 45, direction))
 
         if 'cannon' in recv_msg:
             if 'rotation' in recv_msg['cannon']:
@@ -267,7 +244,7 @@ def main():
 
         screen.fill( (0,0,0) )
 
-        printBackground(screen)
+        game_map.printBackground(screen)
 
         text = font.render('10uv >>', True, (255, 255, 255))
         fps_text = font.render( str(round(clock.get_fps(),2)) + ' fps', True, (255, 255, 255))
@@ -280,9 +257,7 @@ def main():
         screen.blit(fps_text, (config.WIDTH - text_w, 0))
         screen.blit(ping_text, (config.WIDTH - ping_text_w, text_h))
 
-        for i in range(config.WIDTH):
-            pygame.draw.line(screen, (0,0,0), [i, map_curve[i]], [i,config.HEIGHT], 1)
-        
+        game_map.printGround(screen)
 
         if shooting_force != -1:
             if shooting_force < 50:
@@ -294,9 +269,9 @@ def main():
             if not bullet.update():
                 if bullet.collide:
                     x = int(bullet.x)
-                    for i in range(x-10, x+10):
+                    for i in range(x-10, x+10): #TODO: send this to game map
                         if i >= 0 or i < config.WIDTH-1:
-                            map_curve[i] += 10
+                            game_map.map_curve[i] += 10
                 bullets.remove(bullet)
                 del bullet
             else:

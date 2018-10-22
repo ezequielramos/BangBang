@@ -1,9 +1,10 @@
 import pygame
 import config
+from game_map import GameMap
 
 class Bullet(object):
 
-    def __init__(self, screen: pygame.Surface, map_curve, x, y, force, angle=45, direction='right'):
+    def __init__(self, screen: pygame.Surface, game_map: GameMap, x, y, force, angle=45, direction='right'):
         self.x = x
         self.y = y
         self.collide = False
@@ -11,7 +12,7 @@ class Bullet(object):
         self.horizontalForce = force/2
         self.screen = screen
         self.radius = 4
-        self.map_curve = map_curve
+        self.map_curve = game_map.map_curve
         self.direction = 1 if direction == 'right' else -1
 
     def update(self):

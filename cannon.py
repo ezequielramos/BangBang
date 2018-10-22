@@ -1,12 +1,12 @@
 import pygame
+from game_map import GameMap
 
 class Cannon(pygame.sprite.Group):
-    def __init__(self, screen: pygame.Surface, map_curve, x, color):
+    def __init__(self, screen: pygame.Surface, game_map: GameMap, x, color):
         super(pygame.sprite.Group, self).__init__()
 
-        self.rotating = 0
-        self.map_curve = map_curve
-        y = map_curve[int(x)] - 13
+        self.rotating = 0 
+        y = game_map.map_curve[int(x)] - 13
 
         self.base = pygame.sprite.Sprite()
         
