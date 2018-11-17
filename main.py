@@ -259,18 +259,31 @@ def main():
 
         game_map.printGround(screen)
 
+
+        #TODO: draw force rect
         if shooting_force != -1:
             if shooting_force < 50:
                 shooting_force += 1
             
             pygame.draw.rect(screen, (255, 0, 0), [0, config.HEIGHT-(config.HEIGHT/20), config.WIDTH/50 * shooting_force, config.HEIGHT/20])
 
+        #TODO: draw force ruler 
+        pygame.draw.line(screen, (255,255,255), (0,config.HEIGHT-(config.HEIGHT/20)), (config.WIDTH, config.HEIGHT-(config.HEIGHT/20)), 3)
+
+        for i in range(1,8):
+            x_pos = i * config.WIDTH/8
+            pygame.draw.line(screen, (255,255,255), (x_pos,config.HEIGHT), (x_pos, config.HEIGHT-(config.HEIGHT/40)), 3)
+
+        for i in range(1,16):
+            x_pos = i * config.WIDTH/16
+            pygame.draw.line(screen, (255,255,255), (x_pos,config.HEIGHT), (x_pos, config.HEIGHT-(config.HEIGHT/80)), 1)
+
         for bullet in bullets[:]:
             if not bullet.update():
                 if bullet.collide:
                     x = int(bullet.x)
                     for i in range(x-10, x+10): #TODO: send this to game map
-                        if i >= 0 or i < config.WIDTH-1:
+                        if i >= 0 and i < len(game_map.map_curve):
                             game_map.map_curve[i] += 10
                 bullets.remove(bullet)
                 del bullet
