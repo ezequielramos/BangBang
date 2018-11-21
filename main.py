@@ -106,6 +106,66 @@ def joinOptions(screen, font):
 
     return s, game_map
 
+def getInputEvents(screen, cannon1, cannon2, bullets, game_map, shooting_force, msg):
+
+    quitGame = False
+
+    for event in pygame.event.get():
+
+        if event.type == KEYDOWN:
+            if event.key == K_SPACE:
+                shooting_force = 0
+
+            if event.key == K_UP:
+                if TYPE == 'JOIN':
+                    cannon2.rotating = -1
+                    msg['cannon']['rotation'] = -1
+                else:
+                    cannon1.rotating = 1
+                    msg['cannon']['rotation'] = 1
+
+            if event.key == K_DOWN:
+                if TYPE == 'JOIN':
+                    cannon2.rotating = 1
+                    msg['cannon']['rotation'] = 1
+                else:
+                    cannon1.rotating = -1
+                    msg['cannon']['rotation'] = -1
+        
+        if event.type == KEYUP:
+            if event.key == K_SPACE:
+                if TYPE == 'JOIN':
+                    # x = config.WIDTH - 100
+                    direction = 'left'
+                    center = cannon2.base.rect.center
+                else:
+                    # x = 100
+                    direction = 'right'
+                    center = cannon1.base.rect.center
+
+                bullets.append(Bullet(screen, game_map, center[0], center[1], shooting_force, 45, direction))
+                msg['shoot'] = {
+                    'x': center[0],
+                    'y': center[1],
+                    'shooting_force': shooting_force
+                }
+                shooting_force = -1
+            
+            if event.key == K_UP or event.key == K_DOWN:
+                if TYPE == 'JOIN':
+                    cannon2.rotating = 0
+                else:
+                    cannon1.rotating = 0
+
+                msg['cannon']['rotation'] = 0
+
+        if event.type == QUIT:
+            pygame.font.quit()
+            pygame.display.quit()
+            quitGame = True
+
+    return shooting_force, quitGame
+
 def main():
 
     fps = 30
@@ -144,67 +204,17 @@ def main():
         }
         recv_msg = {}
 
-        for event in pygame.event.get():
+        shooting_force, quitGame = getInputEvents(screen, cannon1, cannon2, bullets, game_map, shooting_force, msg)
 
-            if event.type == KEYDOWN:
-                if event.key == K_SPACE:
-                    shooting_force = 0
+        if quitGame:
+            if TYPE == 'HOST':
+                conn.close()
 
-                if event.key == K_UP:
-                    if TYPE == 'JOIN':
-                        cannon2.rotating = -1
-                        msg['cannon']['rotation'] = -1
-                    else:
-                        cannon1.rotating = 1
-                        msg['cannon']['rotation'] = 1
-
-                if event.key == K_DOWN:
-                    if TYPE == 'JOIN':
-                        cannon2.rotating = 1
-                        msg['cannon']['rotation'] = 1
-                    else:
-                        cannon1.rotating = -1
-                        msg['cannon']['rotation'] = -1
+            if TYPE == 'JOIN' or TYPE == 'HOST': 
+                print('Closing Server...')
+                return s
             
-            if event.type == KEYUP:
-                if event.key == K_SPACE:
-                    if TYPE == 'JOIN':
-                        x = config.WIDTH - 100
-                        direction = 'left'
-                        center = cannon2.base.rect.center
-                    else:
-                        x = 100
-                        direction = 'right'
-                        center = cannon1.base.rect.center
-
-                    bullets.append(Bullet(screen, game_map, center[0], center[1], shooting_force, 45, direction))
-                    msg['shoot'] = {
-                        'x': center[0],
-                        'y': center[1],
-                        'shooting_force': shooting_force
-                    }
-                    shooting_force = -1
-                
-                if event.key == K_UP or event.key == K_DOWN:
-                    if TYPE == 'JOIN':
-                        cannon2.rotating = 0
-                    else:
-                        cannon1.rotating = 0
-
-                    msg['cannon']['rotation'] = 0
-
-            if event.type == QUIT:
-                pygame.font.quit()
-                pygame.display.quit()
-
-                if TYPE == 'HOST':
-                    conn.close()
-
-                if TYPE == 'JOIN' or TYPE == 'HOST': 
-                    print('Closing Server...')
-                    return s
-                
-                return
+            return
 
         ping = time.time()
         if TYPE == 'HOST':
