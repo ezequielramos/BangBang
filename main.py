@@ -23,6 +23,7 @@ import config
 from bullet import Bullet
 from cannon import Cannon
 from game_map import GameMap
+import hud
 
 HOST = socket.gethostbyname(socket.gethostname())
 PORT = 5001
@@ -43,6 +44,68 @@ def encodeDict(dict_var):
 def decodeDict(msg):
     return json.loads(msg.decode("utf-8"))
 
+def hostOptions(screen, font):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print('Socket created')
+    
+    try:
+        s.bind((HOST, PORT))
+    except socket.error as msg:
+        print(msg)
+        print('Bind failed. Error Code. ')
+        sys.exit()
+        
+    print('Socket bind complete')
+    print('Hosting on: '+HOST+':'+str(PORT))
+    
+    s.listen(10)
+    print('Socket now listening')
+    
+    try:
+        textOnMiddle(screen, 'Waiting for player to join...', font)
+        pygame.display.flip()
+
+        conn, _ = s.accept()
+    except KeyboardInterrupt:
+        print('Closing Server...')
+        return s
+
+    screen.fill( (0,0,0) )
+    textOnMiddle(screen, 'Generating map...', font)
+    pygame.display.flip()
+    game_map = GameMap().generate(config.WIDTH, config.HEIGHT, 2500)
+    msg = encodeDict(game_map.map_curve)
+    conn.send(bytes(str(len(msg)), 'utf-8'))
+    conn.recv(2)
+    conn.send(msg)
+    conn.recv(2)
+
+    return s, game_map, conn
+
+def joinOptions(screen, font):
+    textOnMiddle(screen, 'Joining...', font)
+    pygame.display.flip()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+    try:
+        s.connect((HOST, PORT))
+    except ConnectionRefusedError:
+        print('Can\'t connect to host.')
+        return 
+    
+    msg_len = s.recv(64)
+    s.send(b'ok')
+    msg = b''
+    while len(msg) < int(msg_len):
+        msg += s.recv(int(msg_len))
+        print(len(msg), msg_len)
+
+    game_map = GameMap()
+    game_map.map_curve = decodeDict(msg)
+    s.send(b'ok')
+
+    return s, game_map
+
 def main():
 
     fps = 30
@@ -53,64 +116,10 @@ def main():
     pygame.font.init()
     font = pygame.font.Font("DejaVuSans.ttf", 24)
 
-
     if TYPE == 'HOST':
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print('Socket created')
-        
-        try:
-            s.bind((HOST, PORT))
-        except socket.error as msg:
-            print(msg)
-            print('Bind failed. Error Code. ')
-            sys.exit()
-            
-        print('Socket bind complete')
-        print('Hosting on: '+HOST+':'+str(PORT))
-        
-        s.listen(10)
-        print('Socket now listening')
-        
-        try:
-            textOnMiddle(screen, 'Waiting for player to join...', font)
-            pygame.display.flip()
-
-            conn, _ = s.accept()
-        except KeyboardInterrupt:
-            print('Closing Server...')
-            return s
-    
-        screen.fill( (0,0,0) )
-        textOnMiddle(screen, 'Generating map...', font)
-        pygame.display.flip()
-        game_map = GameMap().generate(config.WIDTH, config.HEIGHT, 2500)
-        msg = encodeDict(game_map.map_curve)
-        conn.send(bytes(str(len(msg)), 'utf-8'))
-        conn.recv(2)
-        conn.send(msg)
-        conn.recv(2)
-
+        s, game_map, conn = hostOptions(screen, font)
     elif TYPE == 'JOIN':
-        textOnMiddle(screen, 'Joining...', font)
-        pygame.display.flip()
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
-        try:
-            s.connect((HOST, PORT))
-        except ConnectionRefusedError:
-            print('Can\'t connect to host.')
-            return 
-        
-        msg_len = s.recv(64)
-        s.send(b'ok')
-        msg = b''
-        while len(msg) < int(msg_len):
-            msg += s.recv(int(msg_len))
-            print(len(msg), msg_len)
-
-        game_map = GameMap()
-        game_map.map_curve = decodeDict(msg)
-        s.send(b'ok')
+        s, game_map = joinOptions(screen, font)
     else:
         textOnMiddle(screen, 'Generating map...', font)
         pygame.display.flip()
@@ -258,33 +267,31 @@ def main():
         screen.blit(ping_text, (config.WIDTH - ping_text_w, text_h))
 
         game_map.printGround(screen)
-
-
-        #TODO: draw force rect
+        
         if shooting_force != -1:
             if shooting_force < 50:
                 shooting_force += 1
-            
-            pygame.draw.rect(screen, (255, 0, 0), [0, config.HEIGHT-(config.HEIGHT/20), config.WIDTH/50 * shooting_force, config.HEIGHT/20])
+        
+            hud.drawShootForce(screen, shooting_force)
 
-        #TODO: draw force ruler 
-        pygame.draw.line(screen, (255,255,255), (0,config.HEIGHT-(config.HEIGHT/20)), (config.WIDTH, config.HEIGHT-(config.HEIGHT/20)), 3)
-
-        for i in range(1,8):
-            x_pos = i * config.WIDTH/8
-            pygame.draw.line(screen, (255,255,255), (x_pos,config.HEIGHT), (x_pos, config.HEIGHT-(config.HEIGHT/40)), 3)
-
-        for i in range(1,16):
-            x_pos = i * config.WIDTH/16
-            pygame.draw.line(screen, (255,255,255), (x_pos,config.HEIGHT), (x_pos, config.HEIGHT-(config.HEIGHT/80)), 1)
+        hud.drawShootForceRuler(screen)
 
         for bullet in bullets[:]:
             if not bullet.update():
                 if bullet.collide:
                     x = int(bullet.x)
-                    for i in range(x-10, x+10): #TODO: send this to game map
-                        if i >= 0 and i < len(game_map.map_curve):
+                    collision_range = range(x-100, x+100)
+                    for i in collision_range: #TODO: send this to game map
+                        if len(game_map.map_curve) > i >= 0:
                             game_map.map_curve[i] += 10
+
+                    if not cannon1.isAlive(collision_range):
+                        print('canhao 1 perdeu') #TODO desenhar na tela que alguem perdeu
+
+                    if not cannon2.isAlive(collision_range):
+                        print('canhao 2 perdeu')
+
+
                 bullets.remove(bullet)
                 del bullet
             else:

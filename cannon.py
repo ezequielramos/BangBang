@@ -38,6 +38,11 @@ class Cannon(pygame.sprite.Group):
         rect.center = old_center
         self.base.rect = rect
 
+    def isAlive(self, collision_range):
+        if self.base.rect.center[0] in collision_range:
+            return False
+        return True
+
     def draw(self, screen):
         center = self.base.rect.center
         screen.blit(self.image , self.base.rect)
