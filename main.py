@@ -197,7 +197,10 @@ def main():
     cannon1 = Cannon(screen, game_map, 100, (0,255,0))
     cannon2 = Cannon(screen, game_map, config.WIDTH-100, (255,0,0))
 
+    gameEnded = False
+
     while True:
+
 
         msg = {
             "cannon": {}
@@ -261,31 +264,36 @@ def main():
 
         ping = time.time() - ping
 
+        #reset drawing
         screen.fill( (0,0,0) )
 
+        #draw background
         game_map.printBackground(screen)
 
+        #draw top info
         text = font.render('10uv >>', True, (255, 255, 255))
         fps_text = font.render( str(round(clock.get_fps(),2)) + ' fps', True, (255, 255, 255))
         ping_text = font.render('ping ' + str(int(ping * 1000)) + 'ms', True, (255, 255, 255))
         text_w, text_h = fps_text.get_size()
         ping_text_w, _ = ping_text.get_size()
-
-
         screen.blit(text, (0, 0))
         screen.blit(fps_text, (config.WIDTH - text_w, 0))
         screen.blit(ping_text, (config.WIDTH - ping_text_w, text_h))
 
+        #draw map ground
         game_map.printGround(screen)
-        
+
+        #draw shoot bar
         if shooting_force != -1:
             if shooting_force < 50:
                 shooting_force += 1
         
             hud.drawShootForce(screen, shooting_force)
 
+        #draw shoot bar ruler
         hud.drawShootForceRuler(screen)
 
+        #update and draw bullets
         for bullet in bullets[:]:
             if not bullet.update():
                 if bullet.collide:
@@ -296,10 +304,13 @@ def main():
                             game_map.map_curve[i] += 10
 
                     if not cannon1.isAlive(collision_range):
-                        print('canhao 1 perdeu') #TODO desenhar na tela que alguem perdeu
-
+                        winnerText = font.render('Cannon 2 won.', True, (255, 255, 255))
+                        gameEnded = True
+                        break
                     if not cannon2.isAlive(collision_range):
-                        print('canhao 2 perdeu')
+                        winnerText = font.render('Cannon 1 won.', True, (255, 255, 255))
+                        gameEnded = True
+                        break
 
 
                 bullets.remove(bullet)
@@ -307,13 +318,20 @@ def main():
             else:
                 bullet.draw()
 
+        #update and draw cannons
         cannon1.update()
         cannon1.draw(screen)
         cannon2.update()
         cannon2.draw(screen)
 
-        pygame.display.flip()
+        if gameEnded:
+            while len(bullets) > 0:
+                bullets.pop()
+            winnerText_w, winnerText_h = winnerText.get_size()
+            screen.blit(winnerText, (config.WIDTH/2 - winnerText_w/2, config.HEIGHT/2 - winnerText_h/2))
 
+        #end drawing
+        pygame.display.flip()
 
         clock.tick(fps)
 
