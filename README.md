@@ -51,7 +51,7 @@ $ source pyenv3/bin/activate
 (pyenv3) $ python main.py join [HOST_ADDRESS]
 ```
 
-#How to play
+## How to play
 O objetivo do jogo é acertar o canhão do adversário com um tiro de seu canhão.
 Para jogar utilize os direcionais (flecha pra cima e pra baixo) do teclado para mirar o canhão.
 Segure espaço para regular a força do tiro e solte para disparar a bola de canhão
