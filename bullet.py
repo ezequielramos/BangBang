@@ -32,4 +32,4 @@ class Bullet(object):
         return True
 
     def draw(self):
-        pygame.draw.circle(self.screen, (0,100,0), [int(self.x), int(self.y)], 4)
+        pygame.draw.circle(self.screen, (255,100,100), [int(self.x), int(self.y)], 4)
