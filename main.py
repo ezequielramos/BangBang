@@ -135,18 +135,14 @@ def getInputEvents(screen, cannon1, cannon2, bullets, game_map, shooting_force, 
         if event.type == KEYUP:
             if event.key == K_SPACE:
                 if TYPE == 'JOIN':
-                    # x = config.WIDTH - 100
-                    direction = 'left'
                     center = cannon2.base.rect.center
+                    rot = cannon2.rot
                 else:
-                    # x = 100
-                    direction = 'right'
                     center = cannon1.base.rect.center
+                    rot = cannon1.rot
 
-                bullets.append(Bullet(screen, game_map, center[0], center[1], shooting_force, 45, direction))
+                bullets.append(Bullet(screen, game_map, center[0], center[1], shooting_force, rot))
                 msg['shoot'] = {
-                    'x': center[0],
-                    'y': center[1],
                     'shooting_force': shooting_force
                 }
                 shooting_force = -1
@@ -194,8 +190,8 @@ def main():
 
     bullets = []
 
-    cannon1 = Cannon(screen, game_map, 100, (0,255,0))
-    cannon2 = Cannon(screen, game_map, config.WIDTH-100, (255,0,0))
+    cannon1 = Cannon(screen, game_map, 100, (0,255,0), 0)
+    cannon2 = Cannon(screen, game_map, config.WIDTH-100, (255,0,0), 180)
 
     gameEnded = False
 
@@ -249,10 +245,13 @@ def main():
 
         if 'shoot' in recv_msg:
             if TYPE == 'JOIN':
-                direction = 'right'
+                rot = cannon1.rot
+                center = cannon1.base.rect.center
             else:
-                direction = 'left'
-            bullets.append(Bullet(screen, game_map, recv_msg['shoot']['x'], recv_msg['shoot']['y'] , recv_msg['shoot']['shooting_force'], 45, direction))
+                rot = cannon2.rot
+                center = cannon2.base.rect.center
+
+            bullets.append(Bullet(screen, game_map, center[0], center[1] , recv_msg['shoot']['shooting_force'], rot))
 
         if 'cannon' in recv_msg:
             if 'rotation' in recv_msg['cannon']:

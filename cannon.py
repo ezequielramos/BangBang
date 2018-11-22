@@ -2,7 +2,7 @@ import pygame
 from game_map import GameMap
 
 class Cannon(pygame.sprite.Group):
-    def __init__(self, screen: pygame.Surface, game_map: GameMap, x, color):
+    def __init__(self, screen: pygame.Surface, game_map: GameMap, x, color, rot=0):
         super(pygame.sprite.Group, self).__init__()
 
         self.rotating = 0 
@@ -21,7 +21,7 @@ class Cannon(pygame.sprite.Group):
 
         self.base.rect.center = (x , y)  
 
-        self.rot = 0
+        self.rot = rot
         self.rot_speed = 2
 
         self.add(self.base)
