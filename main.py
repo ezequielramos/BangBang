@@ -47,20 +47,20 @@ def decodeDict(msg):
 def hostOptions(screen, font):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print('Socket created')
-    
+
     try:
         s.bind((HOST, PORT))
     except socket.error as msg:
         print(msg)
         print('Bind failed. Error Code. ')
         sys.exit()
-        
+
     print('Socket bind complete')
     print('Hosting on: '+HOST+':'+str(PORT))
-    
+
     s.listen(10)
     print('Socket now listening')
-    
+
     try:
         textOnMiddle(screen, 'Waiting for player to join...', font)
         pygame.display.flip()
@@ -86,13 +86,13 @@ def joinOptions(screen, font):
     textOnMiddle(screen, 'Joining...', font)
     pygame.display.flip()
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
+
     try:
         s.connect((HOST, PORT))
     except ConnectionRefusedError:
         print('Can\'t connect to host.')
-        return 
-    
+        return
+
     msg_len = s.recv(64)
     s.send(b'ok')
     msg = b''
@@ -131,7 +131,7 @@ def getInputEvents(screen, cannon1, cannon2, bullets, game_map, shooting_force, 
                 else:
                     cannon1.rotating = -1
                     msg['cannon']['rotation'] = -1
-        
+
         if event.type == KEYUP:
             if event.key == K_SPACE:
                 if TYPE == 'JOIN':
@@ -146,7 +146,7 @@ def getInputEvents(screen, cannon1, cannon2, bullets, game_map, shooting_force, 
                     'shooting_force': shooting_force
                 }
                 shooting_force = -1
-            
+
             if event.key == K_UP or event.key == K_DOWN:
                 if TYPE == 'JOIN':
                     cannon2.rotating = 0
@@ -209,10 +209,10 @@ def main():
             if TYPE == 'HOST':
                 conn.close()
 
-            if TYPE == 'JOIN' or TYPE == 'HOST': 
+            if TYPE == 'JOIN' or TYPE == 'HOST':
                 print('Closing Server...')
                 return s
-            
+
             return
 
         ping = time.time()
@@ -286,7 +286,7 @@ def main():
         if shooting_force != -1:
             if shooting_force < 50:
                 shooting_force += 1
-        
+
             hud.drawShootForce(screen, shooting_force)
 
         #draw shoot bar ruler
@@ -297,7 +297,7 @@ def main():
             if not bullet.update():
                 if bullet.collide:
                     x = int(bullet.x)
-                    collision_range = range(x-100, x+100)
+                    collision_range = range(x-15, x+15)
                     for i in collision_range: #TODO: send this to game map
                         if len(game_map.map_curve) > i >= 0:
                             game_map.map_curve[i] += 10
