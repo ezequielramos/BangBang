@@ -35,6 +35,12 @@ Certifique-se que o ambiente virtual esta ativo executando:
 ```
 $ source pyenv3/bin/activate
 ```
+
+### How to play alone
+```
+(pyenv3) $ python main.py
+```
+
 ### How to Host
 ```
 (pyenv3) $ python main.py host
@@ -44,6 +50,11 @@ $ source pyenv3/bin/activate
 ```
 (pyenv3) $ python main.py join [HOST_ADDRESS]
 ```
+
+#How to play
+O objetivo do jogo é acertar o canhão do adversário com um tiro de seu canhão.
+Para jogar utilize os direcionais (flecha pra cima e pra baixo) do teclado para mirar o canhão.
+Segure espaço para regular a força do tiro e solte para disparar a bola de canhão
 
 ## Preview
 <table><tr><td><img src="screenshot_samples/1.png"></td><td><img src="screenshot_samples/2.png"></td></tr><tr><td colspan="2"><img src="screenshot_samples/3.png"></td></tr></table>
